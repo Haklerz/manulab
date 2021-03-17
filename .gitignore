@@ -1,0 +1,6 @@
+# VS code folders
+.settings
+.vscode
+
+# Class files
+target
