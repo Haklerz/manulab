@@ -2,6 +2,7 @@ package no.ntnu.manulab;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,17 +40,19 @@ public class Printer implements Closeable {
         return this.host;
     }
 
-    public JsonObject executeMethod(Method method, String path, JsonObject json) throws IOException, JsonException {
-        ClassicHttpRequest request = createRequest(method, URI.create(this.host + path));
+    public JsonObject callMethod(Method method, String path, JsonObject json) throws IOException, JsonException, URISyntaxException {
+        URI uri = new URI("http", this.host, path, null);
+        ClassicHttpRequest request = createRequest(method, uri);
         request.addHeader("X-Api-Key", this.apiKey);
         request.setEntity(new StringEntity(json.toJson(), ContentType.APPLICATION_JSON));
 
         JsonObject response = null;
         try (CloseableHttpResponse httpResponse = this.httpClient.execute(request)) {
             HttpEntity body = httpResponse.getEntity();
-            InputStreamReader content = new InputStreamReader(body.getContent(), "UTF-8");
 
-            response = (JsonObject) Jsoner.deserialize(content);
+            //InputStreamReader content = new InputStreamReader(body.getContent(), "UTF-8");
+
+            //response = (JsonObject) Jsoner.deserialize(content);
             EntityUtils.consume(body);
         }
 

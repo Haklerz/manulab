@@ -1,58 +1,50 @@
 package no.ntnu.manulab;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.hc.core5.http.io.entity.StringEntity;
+import com.github.cliftonlabs.json_simple.JsonArray;
+import com.github.cliftonlabs.json_simple.JsonException;
+import com.github.cliftonlabs.json_simple.JsonObject;
+
+import org.apache.hc.core5.http.Method;
 
 public class Main {
 
-    public static void main(String[] args) {
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
+    public static void main(String[] args) throws IOException, JsonException, URISyntaxException {
+        Supervisor supervisor = new Supervisor();
+        supervisor.addPrinter(new Printer("printer17.local", "8F5BA45DD57648809F06B04AFF8A0096"));
+        supervisor.addPrinter(new Printer("printer18.local", "ACC65C0B35154E3CB8CF5DD691FF6EEC"));
+        supervisor.addPrinter(new Printer("printer19.local", "2D513C05D4374E72839BE7A6AB45648D"));
 
-            HttpPost post = new HttpPost("http://printer17.local" + "/api/login");
-            post.addHeader("X-Api-Key", "055A6B6898E74D9D83A65FBA4D8C2655");
-            post.setEntity(new StringEntity("{\"passive\": true}", ContentType.APPLICATION_JSON));
+        System.out.println();
 
-            HttpGet get = new HttpGet("http://printer17.local" + "/api/printer");
-            get.addHeader("X-Api-Key", "055A6B6898E74D9D83A65FBA4D8C2655");
+        {
+            JsonObject json = new JsonObject();
+            json.put("passive", true);
 
-            HttpPost home = new HttpPost("http://printer17.local" + "/api/printer/printhead");
-            home.addHeader("X-Api-Key", "055A6B6898E74D9D83A65FBA4D8C2655");
-            home.setEntity(new StringEntity("{\"command\": \"home\",\"axes\": [\"x\", \"y\"]}", ContentType.APPLICATION_JSON));
+            supervisor.callMethod("printer17.local", Method.POST, "/api/login", json);
+            supervisor.callMethod("printer18.local", Method.POST, "/api/login", json);
+            supervisor.callMethod("printer19.local", Method.POST, "/api/login", json);
+        }
 
-            try (CloseableHttpResponse response = client.execute(get)) {
-
-                System.out.println(response.getCode() + " " + response.getReasonPhrase());
-                HttpEntity body = response.getEntity();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(body.getContent()));
-
-                String line;
-                while (((line = reader.readLine()) != null)) {
-                    System.out.println(line);
-                }
-                // do something useful with the response body
-                // and ensure it is fully consumed
-                EntityUtils.consume(body);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        } catch (IOException e) {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+
+        {
+            JsonObject json = new JsonObject();
+            json.put("command", "home");
+            json.put("axes", new JsonArray().addChain("x").addChain("y").addChain("z"));
+
+            supervisor.callMethod("printer17.local", Method.POST, "/api/printer/printhead", json);
+            supervisor.callMethod("printer18.local", Method.POST, "/api/printer/printhead", json);
+            supervisor.callMethod("printer19.local", Method.POST, "/api/printer/printhead", json);
+        }
+
+        supervisor.close();
     }
 }
