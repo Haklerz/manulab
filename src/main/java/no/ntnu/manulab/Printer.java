@@ -32,26 +32,64 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
 /**
  * Represents a 3D-printer
  */
-public class Printer implements Closeable {
-    public final String host, apiKey;
+public class Printer implements Runnable, Closeable {
+    public final String hostname, apiKey;
     private final CloseableHttpClient httpClient;
 
-    public Printer(String host, String apiKey) {
-        this.host = host;
+    private Job currentJob;
+    private boolean closed;
+
+    public Printer(String hostname, String apiKey) {
+        this.hostname = hostname;
         this.apiKey = apiKey;
         this.httpClient = HttpClients.createDefault();
+        this.closed = false;
     }
 
-    public JsonObject callMethod(Method method, String path, JsonObject json) throws IOException, URISyntaxException {
-        URI uri = new URI("http", this.host, path, null);
+    @Override
+    public void run() {
+        Ticker poll = new Ticker(5000);
+        Timer pollTimer = new Timer();
 
+        while (!isClosed()) {
+
+            if (pollTimer.get() >= 5) {
+                pollTimer.set(0);
+
+                try {
+
+                    callMethod(Method.GET, "/api/job", null);
+
+                } catch (IOException | URISyntaxException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+
+        }
+    }
+
+    private boolean isClosed() {
+        return this.closed;
+    }
+
+    public void assignJob(Job job) {
+        if (this.currentJob != null)
+            return;
+
+        this.currentJob = job;
+    }
+
+    private JsonObject callMethod(Method method, String path, JsonObject json) throws IOException, URISyntaxException {
+        URI uri = new URI("http", this.hostname, path, null);
         ClassicHttpRequest request = createRequest(method, uri);
         if (request == null) {
             throw new IllegalArgumentException("Given method type is not valid");
         }
 
         request.addHeader("X-Api-Key", this.apiKey);
-        request.setEntity(new StringEntity(json.toJson(), ContentType.APPLICATION_JSON));
+        if (json != null)
+            request.setEntity(new StringEntity(json.toJson(), ContentType.APPLICATION_JSON));
 
         JsonObject response = null;
         try (CloseableHttpResponse httpResponse = this.httpClient.execute(request)) {
@@ -97,12 +135,14 @@ public class Printer implements Closeable {
      * 
      * @return the printers host adress
      */
-    public String getHost() {
-        return this.host;
+    public String getHostname() {
+        return this.hostname;
     }
 
     @Override
     public void close() throws IOException {
+        this.closed = true;
         this.httpClient.close();
     }
+
 }
