@@ -48,13 +48,12 @@ public class Printer implements Runnable, Closeable {
 
     @Override
     public void run() {
-        Ticker poll = new Ticker(5000);
-        Timer pollTimer = new Timer();
+        Timer poll = new Timer();
 
         while (!isClosed()) {
 
-            if (pollTimer.get() >= 5) {
-                pollTimer.set(0);
+            if (poll.isExpired()) {
+                poll.set(5);
 
                 try {
 
