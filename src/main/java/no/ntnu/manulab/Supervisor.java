@@ -1,8 +1,5 @@
 package no.ntnu.manulab;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
