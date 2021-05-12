@@ -5,12 +5,15 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-public class Supervisor implements Runnable {
+/**
+ * 
+ */
+public class JobServer implements Runnable {
 
-    private Map<String, Printer> printersByHost;
+    private Map<String, PrinterHandler> printersByHost;
     private Queue<Job> jobs;
 
-    public Supervisor() {
+    public JobServer() {
         this.printersByHost = new HashMap<>();
         this.jobs = new LinkedList<>();
     }
@@ -39,7 +42,7 @@ public class Supervisor implements Runnable {
         return this.jobs.poll();
     }
 
-    private void addPrinter(Printer printer) {
+    private void addPrinter(PrinterHandler printer) {
         this.printersByHost.put(printer.getHostname(), printer);
     }
 

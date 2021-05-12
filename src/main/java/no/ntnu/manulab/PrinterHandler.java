@@ -30,14 +30,15 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
 /**
- * Represents a 3D-printer
+ * Ready:
+ *  Request a job from 
  */
-public class Printer implements Closeable {
+public class PrinterHandler implements Runnable {
     private final String hostname;
     private final String apiKey;
     private CloseableHttpClient httpClient;
 
-    public Printer(String hostname, String apiKey) {
+    public PrinterHandler(String hostname, String apiKey) {
         this.hostname = hostname;
         this.apiKey = apiKey;
         this.httpClient = HttpClients.createDefault();
@@ -101,9 +102,16 @@ public class Printer implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
-        this.httpClient.close();
-        this.httpClient = null;
+    public void run() {
+        
+        try {
+            this.httpClient.close();
+            this.httpClient = null;
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
     }
 
 }
