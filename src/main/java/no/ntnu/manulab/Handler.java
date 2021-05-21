@@ -20,6 +20,9 @@ import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 
+import no.ntnu.manulab.state.HandlerState;
+import no.ntnu.manulab.state.PollJobState;
+
 /**
  * Ready: Request a job from server
  * 
@@ -27,35 +30,49 @@ import org.apache.hc.core5.http.io.entity.StringEntity;
  */
 public class Handler implements Runnable {
 
-    private final String HOSTNAME;
-    private final String API_KEY;
+    private final Server server;
+    private final String hostname;
+    private final String apiKey;
 
     private CloseableHttpClient httpClient;
     private Job currentJob;
+    private HandlerState currentState;
 
-    public Handler(String hostname, String apiKey) {
-        this.HOSTNAME = hostname;
-        this.API_KEY = apiKey;
+    public Handler(Server server, String hostname, String apiKey) {
+        this.server = server;
+        this.hostname = hostname;
+        this.apiKey = apiKey;
     }
 
     @Override
     public void run() {
         httpClient = HttpClients.createDefault();
 
-        // state machine
+        currentState = new PollJobState();
 
+        while (currentState != null) {
+            HandlerState nextState = currentState.handle(this);
+
+            if (nextState != null)
+                currentState = nextState;
+        }
+
+        closeHttpClient();
+    }
+
+    private void closeHttpClient() {
         try {
             httpClient.close();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         httpClient = null;
     }
 
     private JsonObject callMethod(ClassicHttpRequest request, JsonObject json) throws IOException {
-        request.addHeader("X-Api-Key", API_KEY);
-        request.setEntity(new StringEntity(json.toJson(), ContentType.APPLICATION_JSON));
+        request.addHeader("X-Api-Key", apiKey);
+        if (json != null)
+            request.setEntity(new StringEntity(json.toJson(), ContentType.APPLICATION_JSON));
 
         JsonObject response = null;
         try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
@@ -73,28 +90,61 @@ public class Handler implements Runnable {
     private URI getURI(String path) {
         URI uri = null;
         try {
-            uri = new URI("http", HOSTNAME, path, null);
+            uri = new URI("http", hostname, path, null);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e.getMessage());
         }
         return uri;
     }
 
-    private JsonObject httpGet(String path, JsonObject json) throws IOException {
+    /**
+     * Performs a http GET request and returns the result.
+     * 
+     * @param path the method path
+     * @param json the json data
+     * @return the result of the request
+     * @throws IOException if an IO error occured
+     */
+    public JsonObject httpGet(String path, JsonObject json) throws IOException {
         return callMethod(new HttpGet(getURI(path)), json);
     }
 
-    private JsonObject httpPost(String path, JsonObject json) throws IOException {
+    /**
+     * Performs a http POST request and returns the result.
+     * 
+     * @param path the method path
+     * @param json the json data
+     * @return the result of the request
+     * @throws IOException if an IO error occured
+     */
+    public JsonObject httpPost(String path, JsonObject json) throws IOException {
         return callMethod(new HttpPost(getURI(path)), json);
     }
 
     /**
-     * Returns the printers host adress.
+     * Returns the hostname.
      * 
-     * @return the printers host adress
+     * @return the hostname
      */
     public String getHostname() {
-        return this.HOSTNAME;
+        return hostname;
     }
-    
+
+    /**
+     * Returns the current job.
+     * 
+     * @return the current job
+     */
+    public Job getCurrentJob() {
+        return currentJob;
+    }
+
+    public void setCurrentJob(Job job) {
+        this.currentJob = job;
+    }
+
+    public Server getServer() {
+        return server;
+    }
+
 }
