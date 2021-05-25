@@ -18,7 +18,7 @@ public class PollJobState implements HandlerState {
 
         if (timer.isExpired()) {
 
-            Job job = server.requestJob();
+            Job job = server.pollJob();
 
             if (job != null) {
                 handler.setCurrentJob(job);

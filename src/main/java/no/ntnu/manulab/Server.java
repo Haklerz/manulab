@@ -38,7 +38,13 @@ public class Server implements Runnable {
         return job.getJobNumber();
     }
 
-    public synchronized Job requestJob() {
+    /**
+     * Returns the job at the front of the queue if available. If no job is
+     * available <code>null</code> is returned.
+     * 
+     * @return The a job from the queue if available
+     */
+    public synchronized Job pollJob() {
         return jobQueue.poll();
     }
 

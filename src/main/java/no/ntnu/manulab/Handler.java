@@ -38,6 +38,13 @@ public class Handler implements Runnable {
     private Job currentJob;
     private HandlerState currentState;
 
+    /**
+     * Creates a Handler.
+     * 
+     * @param server
+     * @param hostname
+     * @param apiKey
+     */
     public Handler(Server server, String hostname, String apiKey) {
         this.server = server;
         this.hostname = hostname;
@@ -69,6 +76,14 @@ public class Handler implements Runnable {
         httpClient = null;
     }
 
+    /**
+     * Calls a method of the printer API passing in the given payload.
+     * 
+     * @param request The method request
+     * @param json    The json payload
+     * @return The response from the printer
+     * @throws IOException if a IO-error occured
+     */
     private JsonObject callMethod(ClassicHttpRequest request, JsonObject json) throws IOException {
         request.addHeader("X-Api-Key", apiKey);
         if (json != null)
