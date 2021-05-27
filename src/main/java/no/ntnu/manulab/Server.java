@@ -29,8 +29,8 @@ public class Server implements Runnable {
         // Housekeeping
     }
 
-    public long createJob(String path) throws FileNotFoundException {
-        Job job = new Job(getJobNumber(), path);
+    public synchronized long createJob(String path) throws FileNotFoundException {
+        Job job = new Job(generateJobNumber(), path);
 
         jobsByJobNumber.put(job.getJobNumber(), job);
         jobQueue.offer(job);
@@ -48,7 +48,7 @@ public class Server implements Runnable {
         return jobQueue.poll();
     }
 
-    private long getJobNumber() {
+    private synchronized long generateJobNumber() {
         return currentJobNumber++;
     }
 
